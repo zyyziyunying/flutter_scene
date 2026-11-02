@@ -118,7 +118,22 @@ abstract class TimelineResolver implements PropertyResolver {
     if (time >= _times.last) {
       return _TimelineKey(_times.length - 1, 1);
     }
-    int nextTimeIndex = _times.indexWhere((t) => t >= time);
+    // Lower-bound lookup: keep the first equal key for interior duplicates.
+    // Preserve the original invalid-index failure for NaN time below.
+    int nextTimeIndex = -1;
+    if (!time.isNaN) {
+      var low = 1;
+      var high = _times.length - 1;
+      while (low < high) {
+        final mid = (low + high) >> 1;
+        if (_times[mid] >= time) {
+          high = mid;
+        } else {
+          low = mid + 1;
+        }
+      }
+      nextTimeIndex = low;
+    }
 
     double previousTime = _times[nextTimeIndex - 1];
     double nextTime = _times[nextTimeIndex];
